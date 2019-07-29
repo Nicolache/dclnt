@@ -162,12 +162,17 @@ parser.add_argument(
     help='Store in json format.',
 )
 parser.add_argument(
+    '-cs',
+    '--csv',
+    action='store_true',
+    help='Store in csv format.',
+)
+parser.add_argument(
     '-o',
     '--output',
-    type=argparse.FileType('w'),
-    default=sys.stdout,
-    metavar='output',
-    help="redirect output to a file or stdout, default: stdout",
+    action='store',
+    type=str,
+    help="Redirect output to a file.",
 )
 args = parser.parse_args()
 
@@ -208,7 +213,14 @@ if not args.do_not_count and (args.nouns or args.verbs):
         dict_for_json = {}
         for word, occurence in collections.Counter(wds).most_common(top_size):
             dict_for_json.update({word[0]: (word[1], occurence)})
-        # with open("data_file.json", "w") as write_file:
-        # print('Args.Output: ' + args.output)
         with open(args.output, "w") as write_file:
             json.dump(dict_for_json, write_file)
+
+    if args.csv:
+        list_for_csv = []
+        for word, occurence in collections.Counter(wds).most_common(top_size):
+            list_for_csv.append([word[0], word[1], occurence])
+        with open(args.output, "w") as write_file:
+            writer = csv.writer(write_file, delimiter=',')
+            for line in list_for_csv:
+                writer.writerow(line)
