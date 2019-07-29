@@ -1,8 +1,11 @@
+import sys
 import ast
 import os
 import collections
 import vcstools
 import argparse
+import json
+import csv
 
 from nltk import pos_tag
 
@@ -115,8 +118,8 @@ def get_top_pos_in_path(path, abbreviations, top_size=10):
         # pos - part of speech
         # abbreviations - pos abbreviations
         v.append(get_pos_from_function_name(function_name, abbreviations))
-    verbs = flat(v)
-    return collections.Counter(verbs).most_common(top_size)
+    parts_of_speech = flat(v)
+    return collections.Counter(parts_of_speech).most_common(top_size)
 
 
 parser = argparse.ArgumentParser()
@@ -152,6 +155,20 @@ parser.add_argument(
     action='store_true',
     help='Build statistics of the most frequent nouns.',
 )
+parser.add_argument(
+    '-j',
+    '--json',
+    action='store_true',
+    help='Store in json format.',
+)
+parser.add_argument(
+    '-o',
+    '--output',
+    type=argparse.FileType('w'),
+    default=sys.stdout,
+    metavar='output',
+    help="redirect output to a file or stdout, default: stdout",
+)
 args = parser.parse_args()
 
 if args.clear:
@@ -181,6 +198,17 @@ if not args.do_not_count and (args.nouns or args.verbs):
             wds += get_top_pos_in_path(path, ['VB'])
     
     top_size = 200
-    print('total %s words, %s unique' % (len(wds), len(set(wds))))
-    for word, occurence in collections.Counter(wds).most_common(top_size):
-        print(word, occurence)
+
+    if not (args.json or args.csv):
+        print('total %s words, %s unique' % (len(wds), len(set(wds))))
+        for word, occurence in collections.Counter(wds).most_common(top_size):
+            print(word, occurence)
+
+    if args.json:
+        dict_for_json = {}
+        for word, occurence in collections.Counter(wds).most_common(top_size):
+            dict_for_json.update({word[0]: (word[1], occurence)})
+        # with open("data_file.json", "w") as write_file:
+        # print('Args.Output: ' + args.output)
+        with open(args.output, "w") as write_file:
+            json.dump(dict_for_json, write_file)
