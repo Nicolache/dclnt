@@ -96,7 +96,7 @@ def word_belongs_to_parts_of_speech(word, abbreviations):
 
 
 # pos - part of speech
-def get_pos_from_function_name(function_name, abbreviations):
+def get_pos_from_name(function_name, abbreviations):
     verbs = []
     for word in function_name.split('_'):
         if word_belongs_to_parts_of_speech(word, abbreviations):
@@ -126,15 +126,15 @@ def get_top_pos_in_path(path, abbreviations, top_size=10):
     global Path
     Path = path
     trees = get_trees(None)
-    fncs = []
+    names = []
     for t in trees:
-        fncs = fncs + get_function_names(t)
+        names = names + get_function_names(t)
     print('functions extracted')
     v = []
-    for function_name in fncs:
+    for name in names:
         # pos - part of speech
         # abbreviations - pos abbreviations
-        v.append(get_pos_from_function_name(function_name, abbreviations))
+        v.append(get_pos_from_name(name, abbreviations))
     parts_of_speech = flat(v)
     return collections.Counter(parts_of_speech).most_common(top_size)
 
