@@ -112,6 +112,15 @@ def get_function_names(tree):
                 fncs.append(fnc_name)
     return fncs
 
+def get_variables_names(tree):
+    variables = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            var_name = node.id.lower()
+            if not (var_name.startswith('__') and var_name.endswith('__')):
+                variables.append(var_name)
+    return variables
+
 
 def get_top_pos_in_path(path, abbreviations, top_size=10):
     global Path
@@ -119,7 +128,7 @@ def get_top_pos_in_path(path, abbreviations, top_size=10):
     trees = get_trees(None)
     fncs = []
     for t in trees:
-        fncs = get_function_names(t)
+        fncs = fncs + get_function_names(t)
     print('functions extracted')
     v = []
     for function_name in fncs:
@@ -158,18 +167,6 @@ parser.add_argument(
     action='store_true',
     help='Do not built statistics.',
 )
-# parser.add_argument(
-#     '-V',
-#     '--verbs',
-#     action='store_true',
-#     help='Build statistics of the most frequent verbs.',
-# )
-# parser.add_argument(
-#     '-N',
-#     '--nouns',
-#     action='store_true',
-#     help='Build statistics of the most frequent nouns.',
-# )
 parser.add_argument(
     '-j',
     '--json',
