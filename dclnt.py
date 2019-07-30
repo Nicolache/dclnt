@@ -10,8 +10,8 @@ import csv
 from nltk import pos_tag
 
 
-Path = ''
 repos_local_path = './repos/'
+Path = repos_local_path
 repos_to_clone_urls = [
     ['https://github.com/VladimirFilonov/wsdl2soaplib.git', 'git'],
     ['https://github.com/VladimirFilonov/discogs_client.git', 'git'],
@@ -53,7 +53,10 @@ def is_verb(word):
 def get_filenames():
     filenames = []
     path = Path
+    # print(path)
+    # print(list(os.walk(path)))
     for dirname, dirs, files in os.walk(path, topdown=True):
+        # print(dirname, dirs, files)
         for file in files:
             if file.endswith('.py'):
                 filenames.append(os.path.join(dirname, file))
@@ -100,6 +103,15 @@ def get_pos_from_function_name(function_name, abbreviations):
             verbs.append(word)
     return verbs
 
+def get_function_names(tree):
+    fncs = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            fnc_name = node.name.lower()
+            if not (fnc_name.startswith('__') and fnc_name.endswith('__')):
+                fncs.append(fnc_name)
+    return fncs
+
 
 def get_top_pos_in_path(path, abbreviations, top_size=10):
     global Path
@@ -107,11 +119,7 @@ def get_top_pos_in_path(path, abbreviations, top_size=10):
     trees = get_trees(None)
     fncs = []
     for t in trees:
-        for node in ast.walk(t):
-            if isinstance(node, ast.FunctionDef):
-                fnc_name = node.name.lower()
-                if not (fnc_name.startswith('__') and fnc_name.endswith('__')):
-                    fncs.append(fnc_name)
+        fncs = get_function_names(t)
     print('functions extracted')
     v = []
     for function_name in fncs:
@@ -120,6 +128,13 @@ def get_top_pos_in_path(path, abbreviations, top_size=10):
         v.append(get_pos_from_function_name(function_name, abbreviations))
     parts_of_speech = flat(v)
     return collections.Counter(parts_of_speech).most_common(top_size)
+
+
+def projects_list():
+    directories_list = []
+    for directory in os.listdir(repos_local_path):
+        directories_list.append(os.path.join(repos_local_path, directory))
+    return directories_list
 
 
 parser = argparse.ArgumentParser()
@@ -143,18 +158,18 @@ parser.add_argument(
     action='store_true',
     help='Do not built statistics.',
 )
-parser.add_argument(
-    '-V',
-    '--verbs',
-    action='store_true',
-    help='Build statistics of the most frequent verbs.',
-)
-parser.add_argument(
-    '-N',
-    '--nouns',
-    action='store_true',
-    help='Build statistics of the most frequent nouns.',
-)
+# parser.add_argument(
+#     '-V',
+#     '--verbs',
+#     action='store_true',
+#     help='Build statistics of the most frequent verbs.',
+# )
+# parser.add_argument(
+#     '-N',
+#     '--nouns',
+#     action='store_true',
+#     help='Build statistics of the most frequent nouns.',
+# )
 parser.add_argument(
     '-j',
     '--json',
@@ -174,6 +189,13 @@ parser.add_argument(
     type=str,
     help="Redirect output to a file.",
 )
+parser.add_argument(
+    '-p',
+    '--part',
+    choices=['verbs', 'nouns'],
+    default='verbs',
+    help="A part of speech. A choice between nouns, and verbs statistics.",
+)
 args = parser.parse_args()
 
 if args.clear:
@@ -182,25 +204,21 @@ if args.clear:
 if args.clone:
     clone_all()
 
-if not args.do_not_count and (args.nouns or args.verbs):
+abbreviation_sets = {
+    'nouns': ['NN', 'NNS', 'NNP', 'NNPS'],
+    'verbs': ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ'],
+}
+
+if not args.do_not_count:
+    projects = projects_list()
+    print(projects)
     wds = []
-    projects = [
-        'django',
-        'discogs_client.git',
-        'goipsend.git',
-        'wsdl2soaplib.git',
-        'flask',
-        'pyramid',
-        'reddit',
-        'requests',
-        'sqlalchemy',
-    ]
-    for project in projects:
-        path = os.path.join('.', project)
-        if args.nouns:
-            wds += get_top_pos_in_path(path, ['NN', 'NNS', 'NNP', 'NNPS'])
-        if args.verbs:
-            wds += get_top_pos_in_path(path, ['VB'])
+
+
+    for path in projects:
+        print(path)
+        wds += get_top_pos_in_path(path, abbreviation_sets[args.part])
+
     
     top_size = 200
 
