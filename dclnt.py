@@ -116,9 +116,7 @@ def get_variables_names(tree):
     variables = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
-            var_name = node.id.lower()
-            if not (var_name.startswith('__') and var_name.endswith('__')):
-                variables.append(var_name)
+            variables.append(node.id.lower())
     return variables
 
 
@@ -128,7 +126,10 @@ def get_top_pos_in_path(path, abbreviations, top_size=10):
     trees = get_trees(None)
     names = []
     for t in trees:
-        names = names + get_function_names(t)
+        if args.search_in == 'functions':
+            names = names + get_function_names(t)
+        if args.search_in == 'variables':
+            names = names + get_variables_names(t)
     print('functions extracted')
     v = []
     for name in names:
@@ -168,18 +169,6 @@ parser.add_argument(
     help='Do not built statistics.',
 )
 parser.add_argument(
-    '-j',
-    '--json',
-    action='store_true',
-    help='Store in json format.',
-)
-parser.add_argument(
-    '-cs',
-    '--csv',
-    action='store_true',
-    help='Store in csv format.',
-)
-parser.add_argument(
     '-o',
     '--output',
     action='store',
@@ -191,8 +180,23 @@ parser.add_argument(
     '--part',
     choices=['verbs', 'nouns'],
     default='verbs',
-    help="A part of speech. A choice between nouns, and verbs statistics.",
+    help="A part of speech. A choice between nouns, and verbs statistics. Verbs is default.",
 )
+parser.add_argument(
+    '-s',
+    '--search_in',
+    choices=['functions', 'variables'],
+    default='functions',
+    help="Search parts of speech in functions names, or variables names. Functions is default.",
+)
+parser.add_argument(
+    '-r',
+    '--report_format',
+    choices=['console', 'json', 'csv'],
+    default='console',
+    help="A report format choise.",
+)
+
 args = parser.parse_args()
 
 if args.clear:
@@ -219,19 +223,19 @@ if not args.do_not_count:
     
     top_size = 200
 
-    if not (args.json or args.csv):
+    if args.report_format == 'console':
         print('total %s words, %s unique' % (len(wds), len(set(wds))))
         for word, occurence in collections.Counter(wds).most_common(top_size):
             print(word, occurence)
 
-    if args.json:
+    if args.report_format == 'json':
         dict_for_json = {}
         for word, occurence in collections.Counter(wds).most_common(top_size):
             dict_for_json.update({word[0]: (word[1], occurence)})
         with open(args.output, "w") as write_file:
             json.dump(dict_for_json, write_file)
 
-    if args.csv:
+    if args.report_format == 'csv':
         list_for_csv = []
         for word, occurence in collections.Counter(wds).most_common(top_size):
             list_for_csv.append([word[0], word[1], occurence])
