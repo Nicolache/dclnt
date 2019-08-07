@@ -1,0 +1,5 @@
+*
+!.gitignore
+!requirements.txt
+!README.md
+!parts_of_speech_software_statistics.py
