@@ -1,13 +1,13 @@
-import sys
-import ast
-import os
-import collections
-import vcstools
 import argparse
-import json
+import ast
+import collections
 import csv
+import json
+import os
+import sys
 
 from nltk import pos_tag
+import vcstools
 
 
 repos_local_path = './repos/'
